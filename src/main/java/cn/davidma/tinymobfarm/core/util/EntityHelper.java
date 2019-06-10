@@ -17,13 +17,13 @@ import net.minecraftforge.fml.common.registry.EntityRegistry;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 
 public class EntityHelper {
-	
+
 	private static Method getLootTable;
 
 	public static String getRegistryName(EntityLiving entityLiving) {
 		return EntityRegistry.getEntry(entityLiving.getClass()).getRegistryName().toString();
 	}
-	
+
 	public static boolean isMobBlacklisted(EntityLiving entityLiving) {
 		String mobName = getRegistryName(entityLiving);
 		for (String i: ConfigTinyMobFarm.MOB_BLACKLIST) {
@@ -33,10 +33,14 @@ public class EntityHelper {
 		}
 		return false;
 	}
-	
+
+	public static boolean isBossCaptureAllowed() {
+		return ConfigTinyMobFarm.BOSS_CAPTURE;
+	}
+
 	public static String getLootTableLocation(EntityLiving entityLiving) {
 		ResourceLocation location = null;
-		
+
 		try {
 			if (getLootTable == null) {
 				getLootTable = ReflectionHelper.findMethod(EntityLiving.class, "getLootTable", "func_184647_J", new Class[0]);
@@ -48,10 +52,10 @@ public class EntityHelper {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		return location == null ? "" : location.toString();
 	}
-	
+
 	public static List<ItemStack> generateLoot(ResourceLocation lootTableLocation, World world) {
 		LootTableManager lootTableManager = world.getLootTableManager();
 		LootTable lootTable = lootTableManager.getLootTableFromLocation(lootTableLocation);

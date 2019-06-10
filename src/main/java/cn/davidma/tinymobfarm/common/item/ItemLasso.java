@@ -38,26 +38,26 @@ public class ItemLasso extends Item {
 		this.setMaxDamage(ConfigTinyMobFarm.LASSO_DURABILITY);
 		this.setCreativeTab(TinyMobFarm.creativeTabTinyMobFarm);
 	}
-	
+
 	@Override
 	public int getItemStackLimit(ItemStack stack) {
 		return 1;
 	}
-	
+
 	@Override
 	public boolean itemInteractionForEntity(ItemStack stack, EntityPlayer player, EntityLivingBase target, EnumHand hand) {
 		if (NBTHelper.hasMob(stack) || target.isDead || !(target instanceof EntityLiving)) return false;
-		
+
 		NBTTagCompound nbt = NBTHelper.getBaseTag(stack);
-		
+
 		// Cannot capture boss.
-		if (!target.isNonBoss()) {
+		if (!target.isNonBoss() && EntityHelper.isBossCaptureAllowed() == false) {
 			if (!player.world.isRemote) {
 				Msg.tellPlayer(player, "tinymobfarm.error.cannot_capture_boss");
 			}
 			return true;
 		}
-		
+
 		// Blacklist.
 		if (EntityHelper.isMobBlacklisted((EntityLiving) target)) {
 			if (!player.world.isRemote) {
@@ -65,7 +65,7 @@ public class ItemLasso extends Item {
 			}
 			return true;
 		}
-		
+
 		if (!player.world.isRemote) {
 			NBTTagCompound mobData = target.serializeNBT();
 			mobData.removeTag("Rotation");
@@ -75,55 +75,55 @@ public class ItemLasso extends Item {
 			nbt.setDouble(NBTHelper.MOB_HEALTH, Math.round(target.getHealth() * 10) / 10.0);
 			nbt.setDouble(NBTHelper.MOB_MAX_HEALTH, target.getMaxHealth());
 			nbt.setBoolean(NBTHelper.MOB_HOSTILE, target.isCreatureType(EnumCreatureType.MONSTER, false));
-			
+
 			NBTHelper.setBaseTag(stack, nbt);
-			
+
 			if (player.isCreative()) {
 				ItemStack newLasso = new ItemStack(this);
 				NBTHelper.setBaseTag(newLasso, nbt);
 				player.addItemStackToInventory(newLasso);
 			}
-			
+
 			target.setDead();
 			player.inventory.markDirty();
 		}
-		
+
 		return true;
 	}
-		
+
 	@Override
 	public EnumActionResult onItemUse (EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
 		ItemStack stack = player.inventory.getCurrentItem();
-		
+
 		if (!NBTHelper.hasMob(stack)) return EnumActionResult.FAIL;
-		
+
 		if (!player.canPlayerEdit(pos, facing, stack)) return EnumActionResult.FAIL;
-		
+
 		if (!world.isRemote) {
 			NBTTagCompound nbt = NBTHelper.getBaseTag(stack);
 			NBTTagCompound mobData = nbt.getCompoundTag(NBTHelper.MOB_DATA);
-			
+
 			BlockPos newPos = pos.offset(facing);
-			
+
 			NBTTagDouble x = new NBTTagDouble(newPos.getX() + 0.5);
 			NBTTagDouble y = new NBTTagDouble(newPos.getY());
 			NBTTagDouble z = new NBTTagDouble(newPos.getZ() + 0.5);
 			NBTTagList mobPos = NBTHelper.createNBTList(x, y, z);
 			mobData.setTag("Pos", mobPos);
 			mobData.setInteger("Dimension", world.provider.getDimension());
-			
+
 			Entity mob = EntityList.createEntityFromNBT(mobData, world);
 			if (mob != null) world.spawnEntity(mob);
-			
+
 			NBTHelper.getOrCreateTag(stack).removeTag(NBTHelper.MOB);
-			
+
 			stack.damageItem(1, player);
 			player.inventory.markDirty();
 		}
-		
+
 		return EnumActionResult.SUCCESS;
 	}
-	
+
 	@Override
 	public void addInformation(ItemStack stack, World world, List<String> tooltip, ITooltipFlag flag) {
 		if (NBTHelper.hasMob(stack)) {
@@ -131,7 +131,7 @@ public class ItemLasso extends Item {
 			String name = nbt.getString(NBTHelper.MOB_NAME);
 			double health = nbt.getDouble(NBTHelper.MOB_HEALTH);
 			double maxHealth = nbt.getDouble(NBTHelper.MOB_MAX_HEALTH);
-			
+
 			tooltip.add(I18n.format("tinymobfarm.tooltip.release_mob"));
 			tooltip.add(I18n.format("tinymobfarm.tooltip.mob_name", name));
 			tooltip.add(I18n.format("tinymobfarm.tooltip.health", health, maxHealth));
@@ -140,7 +140,7 @@ public class ItemLasso extends Item {
 			tooltip.add(I18n.format("tinymobfarm.tooltip.capture"));
 		}
 	}
-	
+
 	@Override
 	public boolean hasEffect(ItemStack stack) {
 		return NBTHelper.hasMob(stack);
