@@ -1,6 +1,7 @@
 package cn.davidma.tinymobfarm.core.util;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.List;
 
 import cn.davidma.tinymobfarm.core.ConfigTinyMobFarm;
@@ -19,6 +20,7 @@ import net.minecraftforge.fml.relauncher.ReflectionHelper;
 public class EntityHelper {
 
 	private static Method getLootTable;
+	private static Field fieldDeathLootTable;
 
 	public static String getRegistryName(EntityLiving entityLiving) {
 		return EntityRegistry.getEntry(entityLiving.getClass()).getRegistryName().toString();
@@ -42,12 +44,28 @@ public class EntityHelper {
 		ResourceLocation location = null;
 
 		try {
-			if (getLootTable == null) {
-				getLootTable = ReflectionHelper.findMethod(EntityLiving.class, "getLootTable", "func_184647_J", new Class[0]);
+			if(fieldDeathLootTable == null) {
+				fieldDeathLootTable = ReflectionHelper.findField(EntityLiving.class, "field_184659_bA", "deathLootTable");
 			}
-			Object lootTableLocation = getLootTable.invoke(entityLiving);
+
+			Object lootTableLocation = fieldDeathLootTable.get(entityLiving);
+
 			if (lootTableLocation instanceof ResourceLocation) {
 				location = (ResourceLocation) lootTableLocation;
+			}
+
+
+			if (location == null) {
+				if (getLootTable == null) {
+					getLootTable = ReflectionHelper.findMethod(EntityLiving.class, "getLootTable", "func_184647_J", new Class[0]);
+				}
+
+				lootTableLocation = getLootTable.invoke(entityLiving);
+
+				if (lootTableLocation instanceof ResourceLocation) {
+					location = (ResourceLocation) lootTableLocation;
+				}
+
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
